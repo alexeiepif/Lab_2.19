@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "lab-2-19"
+version = "0.1.0"
+description = ""
+authors = ["alexeiepif <aled2093746@gmail.com>"]
+readme = "README.md"
+packages = [{include = "lab_2"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pathlib = "^1.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
