@@ -59,8 +59,8 @@ def tree(directory, args):
         try:
             if counter < 100000:
                 counter += 1
-                sw = True
             else:
+                sw = True
                 break
             if len(path_list) >= 1000:
                 break
