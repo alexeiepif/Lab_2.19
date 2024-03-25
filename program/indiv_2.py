@@ -47,12 +47,28 @@ def tree(directory, args):
     count = 0
 
     path_list = []
+    all_files = args.a
+    max_depth = args.max_depth
+    only_dir = args.d
+    counter = 0
     for path in directory.rglob("*"):
-        if len(path_list) >= 1000:
-            break
-        if (not args.a) and (any(part.startswith(".") for part in path.parts)):
-            continue
-        path_list.append(path)
+        try:
+            if counter < 100000:
+                counter += 1
+                sw = True
+            else:
+                break
+            if len(path_list) >= 1000:
+                break
+            if max_depth and len(path.parts) - len(directory.parts) > max_depth:
+                continue
+            if only_dir and not path.is_dir():
+                continue
+            if (not all_files) and (any(part.startswith(".") for part in path.parts)):
+                continue
+            path_list.append(path)
+        except PermissionError:
+            pass
     path_list.sort()
 
     for path in path_list:
@@ -76,7 +92,7 @@ def tree(directory, args):
         if path.is_dir():
             current_level[path_work] = current_level.get(path_work, {})
             folders += 1
-        elif not args.d:
+        else:
             current_level[path_work] = None
             files += 1
         if folders + files >= 1000:
@@ -86,7 +102,11 @@ def tree(directory, args):
     print_tree({directory.name: folder_tree}, args.i)
 
     if sw:
-        print(Fore.RED, "Показаны только 1000 элементов.", Style.RESET_ALL)
+        if folders + files < 1000:
+            str_1 = "Вывод ограничен временем"
+        else:
+            str_1 = "Вывод ограничен по длине: 1000 элементов"
+        print(Fore.RED, str_1, Style.RESET_ALL)
     print(
         Fore.YELLOW,
         files,
@@ -111,6 +131,7 @@ def main(command_line=None):
         "-d", action="store_true", help="Print directories only."
     )
     parser.add_argument("-f", action="store_true", help="Print relative path.")
+    parser.add_argument("-m","--max_depth", type=int, default=None, help="Max depth of directories.")
     parser.add_argument(
         "-i",
         action="store_true",
