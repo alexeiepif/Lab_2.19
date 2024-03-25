@@ -60,11 +60,16 @@ def tree(directory, args):
                 break
             if len(path_list) >= 1000:
                 break
-            if max_depth and len(path.parts) - len(directory.parts) > max_depth:
+            if (
+                max_depth
+                and len(path.parts) - len(directory.parts) > max_depth
+            ):
                 continue
             if only_dir and not path.is_dir():
                 continue
-            if (not all_files) and (any(part.startswith(".") for part in path.parts)):
+            if (not all_files) and (
+                any(part.startswith(".") for part in path.parts)
+            ):
                 continue
             path_list.append(path)
         except PermissionError:
@@ -131,7 +136,13 @@ def main(command_line=None):
         "-d", action="store_true", help="Print directories only."
     )
     parser.add_argument("-f", action="store_true", help="Print relative path.")
-    parser.add_argument("-m","--max_depth", type=int, default=None, help="Max depth of directories.")
+    parser.add_argument(
+        "-m",
+        "--max_depth",
+        type=int,
+        default=None,
+        help="Max depth of directories.",
+    )
     parser.add_argument(
         "-i",
         action="store_true",
