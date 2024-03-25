@@ -6,8 +6,10 @@ import argparse
 import sys
 from pathlib import Path
 
+from colorama import Fore, Style
 
-def print_tree(tree, level=0, levels=[]):
+
+def print_tree(tree, lines, level=0, levels=[]):
     """
     Отрисовка дерева каталогов в виде иерархической структуры.
     """
@@ -17,47 +19,81 @@ def print_tree(tree, level=0, levels=[]):
     for i, (node, child) in enumerate(tree.items()):
         if i == len(tree) - 1 and level != 0:
             levels[level - 1] = False
-        branch = "".join("│   " if lev else "    " for lev in levels[:-1])
-        branch += "└── " if i == len(tree) - 1 else "├── "
-        if level == 0:
-            print(str(node))
+        if not lines:
+            branch = "".join("│   " if lev else "    " for lev in levels[:-1])
+            branch += "└── " if i == len(tree) - 1 else "├── "
         else:
-            print(branch + str(node))
-        print_tree(child, level + 1, levels + [True])
+            branch = ""
+        if level == 0:
+            # Синий цвет для корневой папки
+            print(Fore.BLUE + str(node) + Style.RESET_ALL)
+        else:
+            # Для файлов: зеленый цвет, для папок: желтый цвет
+            color = Fore.GREEN if child is not None else Fore.YELLOW
+            print(branch + color + str(node) + Style.RESET_ALL)
+
+        print_tree(child, lines, level + 1, levels + [True])
 
 
-def tree(directory, all_files):
+def tree(directory, args):
     """
     Создание структуры дерева каталогов в виде словаря.
     """
+
+    sw = False
     files = 0
-    folders = 1
+    folders = 0
     folder_tree = {}
-    for path in sorted(directory.rglob("*")):
-        if (not all_files) and (
-            any(part.startswith(".") for part in path.parts)
-        ):
+
+    path_list = sorted(
+        [
+            path
+            for index, path in enumerate(directory.rglob("*"))
+            if index < 1000
+        ]
+    )
+
+    for path in path_list:
+        if (not args.a) and (any(part.startswith(".") for part in path.parts)):
             continue
         relative_path = path.relative_to(directory)
         parts = relative_path.parts
-        current_level = folder_tree
 
-        for part in parts[:-1]:  # Обходим все части пути, кроме последней
-            if part not in current_level:
-                current_level[part] = {}
-            current_level = current_level[part]
-
-        # Добавляем последнюю часть пути (файл или папку)
-        if path.is_dir():
-            current_level[parts[-1]] = current_level.get(parts[-1], {})
-            folders += 1
+        if args.f:
+            path_work = relative_path
         else:
-            # Или используйте str(path) для хранения полного пути к файлу
-            current_level[parts[-1]] = None
-            files += 1
+            path_work = Path(relative_path.name)
+        current_level = folder_tree
+        p = Path()
+        for part in parts[:-1]:
+            if args.f:
+                p = p / part
+            else:
+                p = Path(part)
+            current_level = current_level[p]
 
-    print_tree({directory.name: folder_tree})
-    print(f"{files} files, {folders} folders.")
+        if path.is_dir():
+            current_level[path_work] = current_level.get(path_work, {})
+            folders += 1
+        elif not args.d:
+            current_level[path_work] = None
+            files += 1
+        if folders + files >= 1000:
+            sw = True
+            break
+    print_tree({directory.name: folder_tree}, args.i)
+    if sw:
+        print(Fore.RED, "Показаны только 1000 элементов.", Style.RESET_ALL)
+    print(
+        Fore.YELLOW,
+        files,
+        Style.RESET_ALL,
+        "files, ",
+        Fore.GREEN,
+        folders,
+        Style.RESET_ALL,
+        "folders.",
+    )
 
 
 def main(command_line=None):
@@ -67,6 +103,16 @@ def main(command_line=None):
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-a", action="store_true", help="All files are printed."
+    )
+    parser.add_argument(
+        "-d", action="store_true", help="Print directories only."
+    )
+    parser.add_argument("-f", action="store_true", help="Print relative path.")
+    parser.add_argument(
+        "-i",
+        action="store_true",
+        help="Tree does not print the indentation lines."
+        " Useful when used in conjunction with the -f option.",
     )
     parser.add_argument(
         "directory", nargs="?", default=".", help="Directory to scan."
@@ -79,7 +125,7 @@ def main(command_line=None):
         print(f"Directory '{Path(args.directory).resolve()}' does not exist.")
         sys.exit(1)
 
-    tree(directory, args.a)
+    tree(directory, args)
 
 
 if __name__ == "__main__":
