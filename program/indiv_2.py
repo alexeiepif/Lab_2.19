@@ -5,6 +5,7 @@
 import argparse
 import sys
 from pathlib import Path
+from itertools import count, islice
 
 from colorama import Fore, Style
 
@@ -44,18 +45,19 @@ def tree(directory, args):
     files = 0
     folders = 0
     folder_tree = {}
+    count = 0
 
-    path_list = sorted(
-        [
-            path
-            for index, path in enumerate(directory.rglob("*"))
-            if index < 1000
-        ]
-    )
-
-    for path in path_list:
+    path_list = []
+    for path in directory.rglob("*"):
+        if len(path_list) >= 1000:  # Проверяем, достигнут ли лимит в 1000 файлов
+            break
         if (not args.a) and (any(part.startswith(".") for part in path.parts)):
             continue
+        path_list.append(path)
+    path_list.sort()
+
+    for path in path_list:
+        count += 1
         relative_path = path.relative_to(directory)
         parts = relative_path.parts
 
@@ -81,7 +83,9 @@ def tree(directory, args):
         if folders + files >= 1000:
             sw = True
             break
+
     print_tree({directory.name: folder_tree}, args.i)
+    
     if sw:
         print(Fore.RED, "Показаны только 1000 элементов.", Style.RESET_ALL)
     print(
@@ -130,3 +134,4 @@ def main(command_line=None):
 
 if __name__ == "__main__":
     main()
+    # main(["/"])
