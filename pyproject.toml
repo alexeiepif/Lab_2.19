@@ -8,9 +8,18 @@ packages = [{include = "lab_2"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-pathlib = "^1.0.1"
+jsonschema = "^4.21.1"
+colorama = "^0.4.6"
 
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.3.0"
+flake8 = "^7.0.0"
+isort = "^5.13.2"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 79
